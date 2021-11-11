@@ -31,7 +31,6 @@ class PointwiseMatching(nn.Layer):
                 token_type_ids=None,
                 position_ids=None,
                 attention_mask=None):
-
         _, cls_embedding = self.ptm(input_ids, token_type_ids, position_ids,
                                     attention_mask)
 
@@ -56,7 +55,6 @@ class PairwiseMatching(nn.Layer):
                 token_type_ids=None,
                 position_ids=None,
                 attention_mask=None):
-
         _, cls_embedding = self.ptm(input_ids, token_type_ids, position_ids,
                                     attention_mask)
 
@@ -75,7 +73,6 @@ class PairwiseMatching(nn.Layer):
                 neg_position_ids=None,
                 pos_attention_mask=None,
                 neg_attention_mask=None):
-
         _, pos_cls_embedding = self.ptm(pos_input_ids, pos_token_type_ids,
                                         pos_position_ids, pos_attention_mask)
 

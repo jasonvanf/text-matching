@@ -55,7 +55,6 @@ def convert_pointwise_example(example,
                               tokenizer,
                               max_seq_length=512,
                               is_test=False):
-
     query, title = example["query"], example["title"]
 
     encoded_inputs = tokenizer(
@@ -75,7 +74,6 @@ def convert_pairwise_example(example,
                              tokenizer,
                              max_seq_length=512,
                              phase="train"):
-
     if phase == "train":
         query, pos_title, neg_title = example["query"], example[
             "title"], example["neg_title"]
