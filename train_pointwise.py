@@ -33,7 +33,7 @@ from model import PointwiseMatching
 
 # yapf: disable
 parser = argparse.ArgumentParser()
-parser.add_argument("--save_dir", default='./checkpoint', type=str,
+parser.add_argument("--save_dir", default='./checkpoint_point', type=str,
                     help="The output directory where the model checkpoints will be written.")
 parser.add_argument("--max_seq_length", default=128, type=int,
                     help="The maximum total input sequence length after tokenization. "
@@ -181,6 +181,7 @@ def do_train():
                     % (global_step, epoch, step, loss, acc,
                        10 / (time.time() - tic_train)))
                 tic_train = time.time()
+
             loss.backward()
             optimizer.step()
             lr_scheduler.step()
@@ -196,13 +197,6 @@ def do_train():
                 save_param_path = os.path.join(save_dir, 'model_state.pdparams')
                 paddle.save(model.state_dict(), save_param_path)
                 tokenizer.save_pretrained(save_dir)
-
-    save_dir = os.path.join(args.save_dir, "model_%d" % global_step)
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-    save_param_path = os.path.join(save_dir, 'model_state.pdparams')
-    paddle.save(model.state_dict(), save_param_path)
-    tokenizer.save_pretrained(save_dir)
 
 
 if __name__ == "__main__":

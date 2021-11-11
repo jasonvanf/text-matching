@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
+
 import paddle
 import numpy as np
+import pandas as pd
 
 from paddlenlp.datasets import MapDataset
 
@@ -49,6 +52,24 @@ def read_text_pair(data_path):
             if len(data) != 2:
                 continue
             yield {'query': data[0], 'title': data[1]}
+
+
+def read_excel_pair(filename, is_test=False):
+    """Reads data."""
+    data = pd.read_excel(filename)
+    for index, line in data.iterrows():
+        query = clean_text(line['JQNR'])
+        title = clean_text(line['JQNR'])
+        if is_test:
+            yield {'query': query, 'title': title}
+        else:
+            yield {'query': query, 'title': title, 'label': line['JQNR']}
+
+
+def clean_text(text):
+    text = text.replace("\r", "").replace("\n", "")
+    text = re.sub(r"\\n\n", ".", text)
+    return text
 
 
 def convert_pointwise_example(example,

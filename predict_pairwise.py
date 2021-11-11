@@ -26,7 +26,7 @@ import paddlenlp as ppnlp
 from paddlenlp.datasets import load_dataset
 from paddlenlp.data import Stack, Tuple, Pad
 
-from data import create_dataloader, read_text_pair
+from data import create_dataloader, read_excel_pair
 from data import convert_pairwise_example as convert_example
 from model import PairwiseMatching
 
@@ -100,8 +100,12 @@ if __name__ == "__main__":
         Pad(axis=0, pad_val=tokenizer.pad_token_type_id),  # segment_ids
     ): [data for data in fn(samples)]
 
-    valid_ds = load_dataset(
-        read_text_pair, data_path=args.input_file, lazy=False)
+    trans_func_valid = partial(
+        read_excel_pair,
+        is_test=True)
+
+    valid_ds = valid_origin = load_dataset(
+        trans_func_valid, data_path=args.input_file, lazy=False)
 
     valid_data_loader = create_dataloader(
         valid_ds,
@@ -122,10 +126,7 @@ if __name__ == "__main__":
 
     y_probs = predict(model, valid_data_loader)
 
-    valid_ds = load_dataset(
-        read_text_pair, data_path=args.input_file, lazy=False)
-
     for idx, prob in enumerate(y_probs):
-        text_pair = valid_ds[idx]
+        text_pair = valid_origin[idx]
         text_pair["pred_prob"] = prob[0]
         print(text_pair)

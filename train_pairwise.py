@@ -34,7 +34,7 @@ from model import PairwiseMatching
 # yapf: disable
 parser = argparse.ArgumentParser()
 parser.add_argument("--margin", default=0.2, type=float, help="Margin for pos_score and neg_score.")
-parser.add_argument("--save_dir", default='./checkpoint', type=str,
+parser.add_argument("--save_dir", default='./checkpoint_pair', type=str,
                     help="The output directory where the model checkpoints will be written.")
 parser.add_argument("--max_seq_length", default=128, type=int,
                     help="The maximum total input sequence length after tokenization. "
