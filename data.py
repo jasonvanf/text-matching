@@ -54,22 +54,32 @@ def read_text_pair(data_path):
             yield {'query': data[0], 'title': data[1]}
 
 
-def read_excel_pair(filename, is_test=False):
+def read_excel_pair(data_path, is_test=False):
     """Reads data."""
-    data = pd.read_excel(filename)
+    data = pd.read_excel(data_path)
     for index, line in data.iterrows():
-        query = clean_text(line['JQNR'])
-        title = clean_text(line['JQNR'])
+        query = clean_text(line['query'])
+        title = clean_text(line['title'])
         if is_test:
             yield {'query': query, 'title': title}
         else:
-            yield {'query': query, 'title': title, 'label': line['JQNR']}
+            yield {'query': query, 'title': title, 'label': line['label']}
 
 
 def clean_text(text):
     text = text.replace("\r", "").replace("\n", "")
     text = re.sub(r"\\n\n", ".", text)
     return text
+
+
+def write_excel_results(filename, results):
+    """write test results"""
+    df = pd.read_excel(filename)
+
+    df['第一种情况算法预测结果'] = [x[0] for x in results]
+    with pd.ExcelWriter('sample_test.xlsx') as writer:
+        df.to_excel(writer, index=False)
+    print("Test results saved")
 
 
 def convert_pointwise_example(example,
