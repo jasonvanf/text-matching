@@ -56,7 +56,7 @@ def read_text_pair(data_path):
 
 def read_excel_pair(data_path, is_test=False):
     """Reads data."""
-    data = pd.read_excel(data_path)
+    data = pd.read_excel(data_path, dtype={'query': str, 'title': str})
     for index, line in data.iterrows():
         query = clean_text(line['query'])
         title = clean_text(line['title'])
