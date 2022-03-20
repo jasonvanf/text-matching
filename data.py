@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import os
 import re
 
 import paddle
@@ -56,14 +56,30 @@ def read_text_pair(data_path):
 
 def read_excel_pair(data_path, is_test=False):
     """Reads data."""
-    data = pd.read_excel(data_path, dtype={'query': str, 'title': str})
+    data = pd.read_excel(data_path)
     for index, line in data.iterrows():
-        query = clean_text(line['query'])
-        title = clean_text(line['title'])
+        query = clean_text(str(line['query']))
+        title = clean_text(str(line['title']))
         if is_test:
             yield {'query': query, 'title': title}
         else:
             yield {'query': query, 'title': title, 'label': line['label']}
+
+
+def tm_ind_fire_ds_realtime(fire_data, ind_data):
+    """
+    Text Matching
+    Using a fire supervision system combined text to match all industrial combined text.
+    Instead of output file, output paddle dataset.
+
+    :param fire_data:
+    :param ind_data:
+    :return:
+    """
+
+    for index_fire, fire in fire_data.iterrows():
+        for index_ind, ind in ind_data.iterrows():
+            yield {'query': ind['qymc'], 'title': fire['basic_com_info_xfjd.dwmc']}
 
 
 def clean_text(text):
@@ -76,10 +92,78 @@ def write_excel_results(filename, results):
     """write test results"""
     df = pd.read_excel(filename)
 
-    df['第一种情况算法预测结果'] = [x[0] for x in results]
+    df['result'] = [x[0] for x in results]
     with pd.ExcelWriter('sample_test.xlsx') as writer:
         df.to_excel(writer, index=False)
     print("Test results saved")
+
+
+def tm_select_top_same_excel(fire_data, ind_data, results):
+    """
+    Text Matching
+    Write test results
+
+    :param fire_data:
+    :param ind_data:
+    :param results:
+    :return:
+    """
+
+    df = pd.DataFrame(columns=['fire_id', 'ind_guid', 'query', 'title'])
+    for index_fire, fire in fire_data.iterrows():
+        dataset = pd.DataFrame(columns=['fire_id', 'ind_guid', 'query', 'title'])
+        dataset['ind_guid'] = ind_data['guid']
+        dataset['query'] = ind_data['qymc']
+        dataset['fire_id'] = fire['basic_com_info_xfjd.id']
+        dataset['title'] = fire['basic_com_info_xfjd.dwmc']
+
+        df = pd.concat([df, dataset], axis=0, ignore_index=True)
+
+    df['result'] = [x[0] for x in results]
+
+    pre_group = df.groupby([
+        'fire_id'
+    ], sort=False)['result'].nlargest(5)
+
+    pre_idx = pre_group.reset_index(level='fire_id', drop=True).index
+
+    filename = 'test-timeCNAddrTeam.xlsx'
+    if os.path.exists(filename):
+        with pd.ExcelWriter(filename, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+            df.iloc[pre_idx].to_excel(writer, header=False, index=False, startrow=writer.sheets['Sheet1'].max_row)
+    else:
+        with pd.ExcelWriter(filename, mode='w') as writer:
+            df.iloc[pre_idx].to_excel(writer, index=False)
+    print("Test results saved")
+
+
+def tm_select_top_same_excel_split(fire_data, ind_data, results):
+    """
+    Text Matching
+    Write test results split
+
+    :param fire_data:
+    :param ind_data:
+    :param results:
+    :return:
+    """
+    ind_len = len(ind_data)
+    filename = 'test-timeCNAddrTeam.xlsx'
+    for index_fire, fire in fire_data.iterrows():
+        dataset = pd.DataFrame(columns=['fire_id', 'ind_guid', 'query', 'title', 'result'])
+        dataset['ind_guid'] = ind_data['guid']
+        dataset['query'] = ind_data['qymc']
+        dataset['fire_id'] = fire['basic_com_info_xfjd.id']
+        dataset['title'] = fire['basic_com_info_xfjd.dwmc']
+        dataset['result'] = [x[0] for x in results[index_fire * ind_len:(index_fire + 1) * ind_len]]
+
+        pre_group = dataset.nlargest(5, 'result')
+        if os.path.exists(filename):
+            with pd.ExcelWriter(filename, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                pre_group.to_excel(writer, header=False, index=False, startrow=writer.sheets['Sheet1'].max_row)
+        else:
+            with pd.ExcelWriter(filename, mode='w') as writer:
+                pre_group.to_excel(writer, index=False)
 
 
 def convert_pointwise_example(example,
@@ -139,9 +223,9 @@ def convert_pairwise_example(example,
 
 
 def gen_pair(dataset, pool_size=100):
-    """ 
+    """
     Generate triplet randomly based on dataset
- 
+
     Args:
         dataset: A `MapDataset` or `IterDataset` or a tuple of those. 
             Each example is composed of 2 texts: exampe["query"], example["title"]

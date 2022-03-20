@@ -20,19 +20,21 @@ import random
 import time
 
 import numpy as np
+import pandas as pd
 import paddle
 import paddle.nn.functional as F
 import paddlenlp as ppnlp
 from paddlenlp.datasets import load_dataset
 from paddlenlp.data import Stack, Tuple, Pad
 
-from data import create_dataloader, read_excel_pair, write_excel_results
+from data import create_dataloader, read_excel_pair, write_excel_results, tm_ind_fire_ds_realtime, tm_select_top_same_excel
 from data import convert_pairwise_example as convert_example
 from model import PairwiseMatching
 
 # yapf: disable
 parser = argparse.ArgumentParser()
 parser.add_argument("--input_file", type=str, required=True, help="The full path of input file")
+parser.add_argument("--refer_file", type=str, required=True, help="The full path of reference file")
 parser.add_argument("--params_path", type=str, required=True, help="The path to model parameters to be loaded.")
 parser.add_argument("--max_seq_length", default=64, type=int,
                     help="The maximum total input sequence length after tokenization. "
@@ -100,8 +102,17 @@ if __name__ == "__main__":
         Pad(axis=0, pad_val=tokenizer.pad_token_type_id),  # segment_ids
     ): [data for data in fn(samples)]
 
+    fire_datasets = pd.read_excel(
+        args.input_file,
+        na_filter=False
+    )
+    industrial_datasets = pd.read_excel(
+        args.refer_file,
+        na_filter=False
+    )
+    fire_split = fire_datasets.iloc[0:10, :]
     valid_ds = load_dataset(
-        read_excel_pair, data_path=args.input_file, lazy=False, kwargs={'is_test': True})
+        tm_ind_fire_ds_realtime, fire_data=fire_split, ind_data=industrial_datasets, lazy=False)
 
     valid_data_loader = create_dataloader(
         valid_ds,
@@ -130,4 +141,5 @@ if __name__ == "__main__":
     #     print(text_pair)
 
     # Write test result into excel file
-    write_excel_results(args.input_file, y_probs)
+    # write_excel_results(args.input_file, y_probs)
+    tm_select_top_same_excel(fire_split, industrial_datasets, y_probs)
