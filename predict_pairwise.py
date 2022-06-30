@@ -110,7 +110,7 @@ if __name__ == "__main__":
         args.refer_file,
         na_filter=False
     )
-    fire_split = fire_datasets.iloc[0:10, :]
+    fire_split = fire_datasets.iloc[0:50, :]
     valid_ds = load_dataset(
         tm_ind_fire_ds_realtime, fire_data=fire_split, ind_data=industrial_datasets, lazy=False)
 
