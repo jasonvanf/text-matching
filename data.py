@@ -44,6 +44,18 @@ def create_dataloader(dataset,
         return_list=True)
 
 
+def read_text_pair_train(filename):
+    """Reads data."""
+    with open(filename, 'r', encoding='utf-8') as f:
+        next(f)
+        for line in f:
+            data = line.strip().split(",")
+            if len(data) != 3:
+                continue
+            query, title, label = data
+            yield {"query": query, "title": title, "label": label}
+
+
 def read_text_pair(data_path):
     """Reads data."""
     with open(data_path, 'r', encoding='utf-8') as f:
